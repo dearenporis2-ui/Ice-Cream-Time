@@ -108,6 +108,29 @@
     .field::placeholder { color: #b9a58f; }
     .field:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(224,136,90,.3); }
 
+    /* "Are you sure?" overlay (bottom sheet on phones) */
+    .overlay {
+      position: fixed; inset: 0; z-index: 70; display: none;
+      align-items: flex-end; justify-content: center;
+      padding: 1rem; padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+      background: rgba(74,52,38,.45);
+      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    }
+    .overlay.show { display: flex; animation: fadeIn .25s ease both; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .sheet {
+      width: 100%; max-width: 28rem; text-align: center;
+      border-radius: 1.75rem; background: var(--paper); border: 1.5px solid var(--line);
+      padding: 1.75rem 1.25rem 1.25rem;
+      box-shadow: 0 -10px 40px -16px rgba(74,52,38,.5);
+    }
+    .shake { animation: shake .45s ease; }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-9px); } 40% { transform: translateX(9px); }
+      60% { transform: translateX(-6px); } 80% { transform: translateX(4px); }
+    }
+
     /* Sound on/off toggle */
     #sound-toggle {
       position: fixed; z-index: 60;
@@ -159,6 +182,7 @@
             Zero pressure, 100% decision-making power. Pick your preferred setup for Friday.
           </p>
           <button data-next class="btn mt-10 w-full rounded-2xl px-6 py-4 text-base">Let's do this ✨</button>
+          <button id="nope" class="card mt-3 w-full rounded-2xl px-6 py-4 text-base font-bold" style="color: var(--ink-soft)">Let's not do this 😢</button>
           <p class="mt-4 text-xs" style="color: var(--ink-soft)">Takes about 20 seconds. No wrong answers.</p>
         </div>
       </section>
@@ -221,6 +245,18 @@
         </div>
       </section>
     </main>
+
+    <!-- "Let's not do this" troll overlay -->
+    <div id="nope-overlay" class="overlay" role="dialog" aria-modal="true" aria-live="polite">
+      <div id="nope-sheet" class="sheet">
+        <div id="nope-face" class="text-6xl">🥺</div>
+        <p id="nope-msg" class="mt-4 text-xl font-extrabold leading-snug"></p>
+        <div class="mt-6 flex flex-col items-center gap-3">
+          <button id="nope-fine" class="btn w-full rounded-2xl px-6 py-4 text-base">Hmm, okay, let's do it 🍦</button>
+          <button id="nope-sure" class="card w-full rounded-2xl px-6 py-3 text-sm font-bold" style="color: var(--ink-soft)">Yes, I'm sure 😤</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Sticky Continue button (pages 1-4) -->
     <div id="footer" class="sticky bottom-0 mt-6 hidden pt-3" style="background: linear-gradient(to top, var(--cream) 65%, transparent);">
@@ -542,6 +578,50 @@
       paintToggle();
     });
     paintToggle();
+
+    /* ---------- "Let's not do this" troll ---------- */
+    // Each "Yes, I'm sure" moves to the next message. Edit the lines to taste.
+    const NOPE_STEPS = [
+      { face: '🥺', msg: 'Wait... are you sure?' },
+      { face: '😢', msg: 'Are you really sure?' },
+      { face: '😭', msg: 'Like really, REALLY sure?' },
+      { face: '💔', msg: 'The ice cream is going to be so sad...' },
+      { face: '🥹', msg: 'I already told the gelato about you.' },
+      { face: '🥺', msg: "Last chance. I'm getting the puppy eyes ready." }
+    ];
+    const NOPE_FINAL = { face: '😌', msg: "Nice try, but the Protocol doesn't accept a no. Ice cream is happening." };
+    let nopeIdx = 0;
+
+    function paintNope() {
+      const final = nopeIdx >= NOPE_STEPS.length;
+      const s = final ? NOPE_FINAL : NOPE_STEPS[nopeIdx];
+      $('nope-face').textContent = s.face;
+      $('nope-msg').textContent = s.msg;
+
+      // Re-trigger the shake each round
+      const sheet = $('nope-sheet');
+      sheet.classList.remove('shake'); void sheet.offsetWidth; sheet.classList.add('shake');
+
+      // "Yes, I'm sure" shrinks every round while "okay, let's do it" grows. Troll energy.
+      const sure = $('nope-sure'), fine = $('nope-fine');
+      sure.classList.toggle('hidden', final);
+      sure.style.transform = `scale(${Math.max(0.6, 1 - nopeIdx * 0.1)})`;
+      fine.style.transform = `scale(${Math.min(1.1, 1 + nopeIdx * 0.025)})`;
+      fine.textContent = final ? "Fine, let's do this 🍦" : "Hmm, okay, let's do it 🍦";
+    }
+
+    $('nope').addEventListener('click', () => {
+      playSfx('tap');
+      nopeIdx = 0;
+      paintNope();
+      $('nope-overlay').classList.add('show');
+    });
+    $('nope-sure').addEventListener('click', () => { playSfx('tap'); nopeIdx++; paintNope(); });
+    $('nope-fine').addEventListener('click', () => {
+      playSfx('start');
+      $('nope-overlay').classList.remove('show');
+      goTo(1); // straight into Step 1
+    });
 
     /* ---------- Init ---------- */
     render('spots',   OPTIONS.spot,   cardHTML);
