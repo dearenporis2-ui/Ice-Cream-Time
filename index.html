@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f6ecd8" />
+  <title>Friday Ice Cream Protocol 🍦</title>
+  <meta name="description" content="Zero pressure, 100% decision-making power. Pick your setup for Friday." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍦</text></svg>" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --cream: #f6ecd8;
+      --cream-2: #efe1c6;
+      --paper: #fffaf0;
+      --ink: #4a3426;
+      --ink-soft: #8a7261;
+      --line: #e4d3b4;
+      --accent: #e0885a;      /* warm caramel-peach */
+      --accent-deep: #c96a3d;
+      --berry: #d9667a;
+    }
+
+    html, body { height: 100%; }
+    html { background: var(--cream); }
+
+    /* Background lives on a fixed layer: iOS Safari ignores background-attachment: fixed */
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+      background-color: var(--cream);
+      background-image:
+        radial-gradient(50% 35% at 10% 0%, rgba(224,136,90,.18), transparent 70%),
+        radial-gradient(45% 35% at 100% 15%, rgba(217,102,122,.14), transparent 70%),
+        radial-gradient(60% 40% at 50% 100%, rgba(239,225,198,.9), transparent 70%);
+    }
+
+    /* No 300ms double-tap-zoom delay on phones */
+    button, input { touch-action: manipulation; }
+
+    /* Full-height centering that respects mobile browser toolbars (vh fallback, then dvh) */
+    .fill-70 { min-height: 70vh; min-height: 70dvh; }
+    .fill-80 { min-height: 80vh; min-height: 80dvh; }
+
+    body {
+      color: var(--ink);
+      -webkit-tap-highlight-color: transparent;
+      font-family: ui-rounded, "SF Pro Rounded", "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Soft paper card */
+    .card {
+      background: rgba(255,250,240,.78);
+      border: 1.5px solid var(--line);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 6px 20px -12px rgba(120,80,40,.35);
+      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease, background .2s ease;
+    }
+    .card:active { transform: scale(.98); }
+
+    /* Selected state for cards + pills */
+    .is-active {
+      border-color: var(--accent) !important;
+      background: #fff3e2 !important;
+      box-shadow: 0 0 0 3px rgba(224,136,90,.35), 0 10px 26px -12px rgba(201,106,61,.55);
+    }
+    .check { transform: scale(0); transition: transform .25s cubic-bezier(.3,1.6,.5,1); }
+    .is-active .check { transform: scale(1); }
+
+    /* Pages */
+    .page { display: none; }
+    .page.show { display: block; animation: pageIn .45s cubic-bezier(.2,.8,.2,1) both; }
+    .page.back.show { animation-name: pageInBack; }
+    @keyframes pageIn     { from { opacity: 0; transform: translateX(28px); }  to { opacity: 1; transform: none; } }
+    @keyframes pageInBack { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+
+    .float { animation: float 3.2s ease-in-out infinite; }
+    @keyframes float { 50% { transform: translateY(-8px) rotate(-4deg); } }
+
+    .pop { animation: pop .7s cubic-bezier(.3,1.5,.5,1) both; }
+    @keyframes pop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    .wiggle { animation: wiggle 2.4s ease-in-out infinite; transform-origin: 50% 90%; }
+    @keyframes wiggle { 0%,100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+
+    /* Progress dots */
+    .dot { height: 8px; width: 8px; border-radius: 999px; background: var(--line); transition: all .3s ease; }
+    .dot.on { background: var(--accent); width: 26px; }
+    .dot.done { background: var(--accent); opacity: .55; }
+
+    /* Primary button */
+    .btn {
+      background: linear-gradient(135deg, #eb9a6b, var(--accent-deep));
+      color: #fff; font-weight: 800;
+      box-shadow: 0 12px 24px -10px rgba(201,106,61,.7);
+      transition: transform .15s ease, opacity .2s ease, box-shadow .2s ease;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn[disabled] { opacity: .4; box-shadow: none; cursor: not-allowed; background: #cdb89a; }
+    .btn-soft { background: transparent; color: var(--ink-soft); font-weight: 700; }
+
+    .field {
+      background: var(--paper); border: 1.5px solid var(--line); color: var(--ink);
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+    .field::placeholder { color: #b9a58f; }
+    .field:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(224,136,90,.3); }
+
+    /* Sound on/off toggle */
+    #sound-toggle {
+      position: fixed; z-index: 60;
+      top: calc(.75rem + env(safe-area-inset-top, 0px)); right: .9rem;
+      height: 40px; width: 40px; border-radius: 999px; font-size: 18px; line-height: 1;
+      background: rgba(255,250,240,.85); border: 1.5px solid var(--line);
+      box-shadow: 0 6px 16px -10px rgba(120,80,40,.5);
+      transition: transform .15s ease;
+    }
+    #sound-toggle:active { transform: scale(.92); }
+
+    /* Falling confetti emojis (created in JS) */
+    .confetti {
+      position: fixed; top: -10vh; z-index: 50; pointer-events: none; user-select: none;
+      animation: fall linear forwards;
+    }
+    @keyframes fall { to { transform: translateY(115vh) rotate(540deg); opacity: .9; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .confetti { display: none; }
+    }
+  </style>
+</head>
+
+<body class="antialiased">
+  <button id="sound-toggle" type="button" aria-label="Toggle sound" aria-pressed="true">🔊</button>
+
+  <div class="mx-auto flex min-h-full w-full max-w-md flex-col px-5"
+       style="padding-top: calc(1.25rem + env(safe-area-inset-top, 0px)); padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));">
+
+    <!-- Top bar: back + progress dots (hidden on welcome / done) -->
+    <div id="topbar" class="flex h-10 items-center justify-between opacity-0 pointer-events-none transition-opacity">
+      <button id="back" class="btn-soft -ml-2 rounded-full px-3 py-2 text-sm" aria-label="Go back">← Back</button>
+      <div id="dots" class="flex items-center gap-1.5" aria-hidden="true"></div>
+      <span class="w-14"></span>
+    </div>
+
+    <main class="flex flex-1 flex-col">
+
+      <!-- PAGE 0: WELCOME -->
+      <section class="page flex-1 flex-col justify-center text-center" data-page="0">
+        <div class="fill-70 flex flex-col items-center justify-center">
+          <div class="float inline-flex h-24 w-24 items-center justify-center rounded-[2rem] card text-6xl">🍦</div>
+          <h1 class="mt-6 text-4xl font-extrabold leading-tight tracking-tight" style="color: var(--ink)">
+            Friday Ice Cream <span style="color: var(--accent-deep)">Protocol</span>
+          </h1>
+          <p class="mt-4 max-w-xs text-base leading-relaxed" style="color: var(--ink-soft)">
+            Zero pressure, 100% decision-making power. Pick your preferred setup for Friday.
+          </p>
+          <button data-next class="btn mt-10 w-full rounded-2xl px-6 py-4 text-base">Let's do this ✨</button>
+          <p class="mt-4 text-xs" style="color: var(--ink-soft)">Takes about 20 seconds. No wrong answers.</p>
+        </div>
+      </section>
+
+      <!-- PAGE 1: SPOT -->
+      <section class="page" data-page="1">
+        <p class="mt-6 text-xs font-bold uppercase tracking-widest" style="color: var(--accent-deep)">Step 1 of 3</p>
+        <h2 class="mt-1 text-3xl font-extrabold tracking-tight">Where to? 📍</h2>
+        <p class="mt-2 text-sm" style="color: var(--ink-soft)">Pick the spot. Or hand me the decision, I'm easy.</p>
+        <div id="spots" role="radiogroup" aria-label="Choose the spot" class="mt-6 grid gap-3"></div>
+      </section>
+
+      <!-- PAGE 2: TIME -->
+      <section class="page" data-page="2">
+        <p class="mt-6 text-xs font-bold uppercase tracking-widest" style="color: var(--accent-deep)">Step 2 of 3</p>
+        <h2 class="mt-1 text-3xl font-extrabold tracking-tight">What time suits you? ⏰</h2>
+        <p class="mt-2 text-sm" style="color: var(--ink-soft)">Tap one, or type your own. Whatever works for you.</p>
+
+        <div id="times" role="radiogroup" aria-label="Preferred time" class="mt-6 grid grid-cols-3 gap-2"></div>
+        <p id="time-note" class="mt-3 h-5 text-center text-xs" style="color: var(--ink-soft)"></p>
+
+        <div class="my-5 flex items-center gap-3 text-xs font-semibold" style="color: var(--ink-soft)">
+          <span class="h-px flex-1" style="background: var(--line)"></span>or type your own<span class="h-px flex-1" style="background: var(--line)"></span>
+        </div>
+
+        <input id="custom-time" type="text" inputmode="text" maxlength="30" autocomplete="off" autocorrect="off" enterkeyhint="done"
+               placeholder="e.g. 7:15 PM, or 'after 6 ish'"
+               class="field w-full rounded-2xl px-4 py-4 text-base" />
+      </section>
+
+      <!-- PAGE 3: FLAVOR -->
+      <section class="page" data-page="3">
+        <p class="mt-6 text-xs font-bold uppercase tracking-widest" style="color: var(--accent-deep)">Step 3 of 3</p>
+        <h2 class="mt-1 text-3xl font-extrabold tracking-tight">What's the mood? 🍨</h2>
+        <p class="mt-2 text-sm" style="color: var(--ink-soft)">Pick your flavor team for the day.</p>
+        <div id="flavors" role="radiogroup" aria-label="Ice cream preference" class="mt-6 grid gap-3"></div>
+      </section>
+
+      <!-- PAGE 4: REVIEW -->
+      <section class="page" data-page="4">
+        <p class="mt-6 text-xs font-bold uppercase tracking-widest" style="color: var(--accent-deep)">Last look</p>
+        <h2 class="mt-1 text-3xl font-extrabold tracking-tight">Your Friday, sorted 🎀</h2>
+        <p class="mt-2 text-sm" style="color: var(--ink-soft)">Happy with it? Tap an item to change it.</p>
+        <div id="summary" class="mt-6 grid gap-3"></div>
+      </section>
+
+      <!-- PAGE 5: DONE -->
+      <section class="page flex-1 text-center" data-page="5">
+        <div class="fill-80 flex flex-col items-center justify-center">
+          <div id="done-emoji" class="pop wiggle text-8xl">🍦</div>
+          <h2 class="pop mt-6 text-4xl font-extrabold tracking-tight" style="animation-delay:.15s">Look at you, decisive 😌</h2>
+          <p id="done-line" class="pop mt-3 max-w-xs text-base leading-relaxed" style="color: var(--ink-soft); animation-delay:.3s"></p>
+
+          <div id="done-card" class="pop card mt-7 w-full rounded-3xl p-5 text-left" style="animation-delay:.45s"></div>
+
+          <button id="send" class="btn pop mt-7 w-full rounded-2xl px-6 py-4 text-base" style="animation-delay:.6s">
+            Send it on WhatsApp 💬
+          </button>
+          <button id="restart" class="btn-soft pop mt-2 rounded-full px-4 py-3 text-sm" style="animation-delay:.7s">Changed my mind, start over</button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Sticky Continue button (pages 1-4) -->
+    <div id="footer" class="sticky bottom-0 mt-6 hidden pt-3" style="background: linear-gradient(to top, var(--cream) 65%, transparent);">
+      <button id="continue" class="btn w-full rounded-2xl px-6 py-4 text-base" disabled>Continue</button>
+      <p id="hint" class="mt-2 h-4 text-center text-xs" style="color: var(--ink-soft)"></p>
+    </div>
+  </div>
+
+  <script>
+    /* ---------------------------------------------------------
+       CONFIG: edit options here; the UI renders from this data.
+       --------------------------------------------------------- */
+    const OPTIONS = {
+      spot: [
+        { id: 'dolce',    label: 'La Dolce Vita (Victoria)', tag: 'Classic gelato, right in town.',            icon: '🍨', text: 'La Dolce Vita' },
+        { id: 'dockside', label: 'Dockside / Eden Plaza',    tag: 'Waterfront views & chill vibe.',            icon: '🌊', text: 'Dockside / Eden Plaza' },
+        { id: 'surprise', label: 'Surprise Me',              tag: "You choose the spot. I'll just show up and enjoy it.", icon: '🎲', text: null } // null = spot left to him
+      ],
+      time: [
+        { id: '1700', label: '5:00 PM', note: 'Right after work',          text: '5:00 PM' },
+        { id: '1730', label: '5:30 PM', note: 'Need a quick breath first', text: '5:30 PM' },
+        { id: '1800', label: '6:00 PM', note: 'Evening chill',             text: '6:00 PM' }
+      ],
+      flavor: [
+        { id: 'classic',     label: 'Classic',        tag: 'Chocolate / Vanilla / Hazelnut', icon: '🍫', team: 'Team Classic' },
+        { id: 'fruit',       label: 'Fruit & Sorbet', tag: 'Passion fruit / Mango / Berry',  icon: '🥭', team: 'Team Fruit & Sorbet' },
+        { id: 'adventurous', label: 'Adventurous',    tag: 'Whatever looks best on the day', icon: '✨', team: 'Team Adventurous' }
+      ]
+    };
+
+    // Little lines shown on the completion screen (one is picked at random)
+    const HAPPY_LINES = [
+      "Friday just got a whole lot better.",
+      "Best decision of the week, honestly.",
+      "Ice cream, good company, zero stress. Perfect.",
+      "Somebody's about to have a very good Friday."
+    ];
+
+    // Page order: 0 welcome, 1 spot, 2 time, 3 flavor, 4 review, 5 done
+    const LAST_STEP = 4;
+
+    // Current selections
+    const state = {
+      spot: null,       // option object
+      timeId: null,     // preset pill id (or null)
+      customTime: '',   // typed time (wins over pills when filled)
+      flavor: null      // option object
+    };
+
+    let page = 0;
+
+    const $ = (id) => document.getElementById(id);
+    const pages = [...document.querySelectorAll('.page')];
+
+    /* ---------- Helpers ---------- */
+
+    // The time she ends up with: typed text wins, otherwise the pill
+    function getTime() {
+      const typed = state.customTime.trim();
+      if (typed) return { text: typed, note: 'Your own time. Love it.' };
+      const p = OPTIONS.time.find((t) => t.id === state.timeId);
+      return p ? { text: p.text, note: p.note } : null;
+    }
+
+    function isStepComplete(n) {
+      if (n === 1) return !!state.spot;
+      if (n === 2) return !!getTime();
+      if (n === 3) return !!state.flavor;
+      return true;
+    }
+
+    /* ---------- Rendering ---------- */
+
+    // Big card used for Spot and Flavor
+    function cardHTML(o) {
+      return `
+        <button type="button" role="radio" aria-checked="false" data-id="${o.id}"
+          class="card relative flex w-full items-center gap-4 rounded-3xl p-4 text-left">
+          <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-3xl" style="background: var(--cream-2)">${o.icon}</span>
+          <span class="min-w-0 flex-1">
+            <span class="block text-base font-bold">${o.label}</span>
+            <span class="block text-sm" style="color: var(--ink-soft)">${o.tag}</span>
+          </span>
+          <span class="check flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black text-white" style="background: var(--accent)">✓</span>
+        </button>`;
+    }
+
+    // Pill used for Time
+    function pillHTML(o) {
+      return `
+        <button type="button" role="radio" aria-checked="false" data-id="${o.id}"
+          class="card rounded-full px-2 py-3.5 text-sm font-bold">${o.label}</button>`;
+    }
+
+    function render(containerId, items, htmlFn) {
+      $(containerId).innerHTML = items.map(htmlFn).join('');
+    }
+
+    function renderDots() {
+      $('dots').innerHTML = [1, 2, 3, 4].map((n) =>
+        `<span class="dot ${n === page ? 'on' : n < page ? 'done' : ''}"></span>`).join('');
+    }
+
+    function renderSummary() {
+      const t = getTime();
+      const rows = [
+        { go: 1, icon: state.spot.icon,   k: 'Spot',   v: state.spot.label },
+        { go: 2, icon: '⏰',              k: 'Time',   v: t.text },
+        { go: 3, icon: state.flavor.icon, k: 'Flavor', v: `${state.flavor.team}` }
+      ];
+      $('summary').innerHTML = rows.map((r) => `
+        <button type="button" data-go="${r.go}" class="card flex w-full items-center gap-4 rounded-3xl p-4 text-left">
+          <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl" style="background: var(--cream-2)">${r.icon}</span>
+          <span class="min-w-0 flex-1">
+            <span class="block text-xs font-bold uppercase tracking-widest" style="color: var(--ink-soft)">${r.k}</span>
+            <span class="block text-base font-bold">${escapeHTML(r.v)}</span>
+          </span>
+          <span class="text-sm font-bold" style="color: var(--accent-deep)">Edit</span>
+        </button>`).join('');
+    }
+
+    function renderDone() {
+      const t = getTime();
+      $('done-line').textContent = HAPPY_LINES[Math.floor(Math.random() * HAPPY_LINES.length)];
+      $('done-emoji').textContent = state.flavor.icon === '🥭' ? '🍧' : '🍦';
+      $('done-card').innerHTML = `
+        <p class="text-xs font-bold uppercase tracking-widest" style="color: var(--accent-deep)">Friday plan</p>
+        <p class="mt-2 text-lg font-extrabold leading-snug">${escapeHTML(state.spot.text || 'Spot: a surprise 😉')}</p>
+        <p class="mt-1 text-base font-semibold">${escapeHTML(t.text)} · ${escapeHTML(state.flavor.team)}</p>`;
+    }
+
+    // Typed text goes into the DOM, so keep it safe
+    function escapeHTML(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    /* ---------- Page navigation ---------- */
+
+    function goTo(n, isBack = false) {
+      page = n;
+      pages.forEach((p) => {
+        const on = Number(p.dataset.page) === n;
+        p.classList.toggle('show', on);
+        p.classList.toggle('back', isBack);
+      });
+
+      const inFlow = n >= 1 && n <= LAST_STEP;
+      $('topbar').classList.toggle('opacity-0', !inFlow);
+      $('topbar').classList.toggle('pointer-events-none', !inFlow);
+      $('footer').classList.toggle('hidden', !inFlow);
+
+      if (n === 4) renderSummary();
+      if (n === 5) { renderDone(); celebrate(); playSfx('success'); }
+      if (inFlow) renderDots();
+      updateFooter();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function updateFooter() {
+      const btn = $('continue');
+      const ok = isStepComplete(page);
+      btn.disabled = !ok;
+      btn.textContent = page === LAST_STEP ? 'Lock In Friday 🍦' : 'Continue';
+      $('hint').textContent = ok ? '' : 'Pick one to continue';
+    }
+
+    function next() {
+      if (!isStepComplete(page)) return;
+      if (page + 1 < 5) playSfx('next'); // the finale plays the success jingle instead
+      goTo(page + 1);
+    }
+
+    /* ---------- Selection logic ---------- */
+
+    // Wire a radio-style group (cards or pills)
+    function wireGroup(containerId, onPick) {
+      const box = $(containerId);
+      box.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-id]');
+        if (!btn) return;
+        playSfx('tap');
+        highlight(box, btn);
+        onPick(btn.dataset.id);
+        updateFooter();
+      });
+    }
+
+    function highlight(box, activeBtn) {
+      box.querySelectorAll('button[data-id]').forEach((b) => {
+        const on = b === activeBtn;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-checked', on);
+      });
+    }
+
+    wireGroup('spots',   (id) => { state.spot = OPTIONS.spot.find((o) => o.id === id); });
+    wireGroup('flavors', (id) => { state.flavor = OPTIONS.flavor.find((o) => o.id === id); });
+    wireGroup('times',   (id) => {
+      // Picking a pill clears anything typed
+      state.timeId = id;
+      state.customTime = '';
+      $('custom-time').value = '';
+      $('time-note').textContent = OPTIONS.time.find((o) => o.id === id).note;
+    });
+
+    // Typing a custom time deselects the pills (typed text wins)
+    $('custom-time').addEventListener('input', (e) => {
+      state.customTime = e.target.value;
+      if (state.customTime.trim()) {
+        state.timeId = null;
+        $('times').querySelectorAll('button').forEach((b) => { b.classList.remove('is-active'); b.setAttribute('aria-checked', false); });
+        $('time-note').textContent = 'Your own time. Love it.';
+      } else {
+        $('time-note').textContent = '';
+      }
+      updateFooter();
+    });
+    $('custom-time').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); next(); } });
+
+    /* ---------- Buttons ---------- */
+
+    document.querySelector('[data-next]').addEventListener('click', () => { playSfx('start'); goTo(1); });
+    $('back').addEventListener('click', () => { if (page > 1) { playSfx('back'); goTo(page - 1, true); } });
+    $('continue').addEventListener('click', next);
+
+    // Tap a summary row to jump back and edit
+    $('summary').addEventListener('click', (e) => {
+      const row = e.target.closest('[data-go]');
+      if (row) { playSfx('back'); goTo(Number(row.dataset.go), true); }
+    });
+
+    $('restart').addEventListener('click', () => {
+      stopSuccess();
+      playSfx('back');
+      state.spot = null; state.timeId = null; state.customTime = ''; state.flavor = null;
+      $('custom-time').value = ''; $('time-note').textContent = '';
+      document.querySelectorAll('.is-active').forEach((b) => { b.classList.remove('is-active'); b.setAttribute('aria-checked', false); });
+      goTo(0, true);
+    });
+
+    /* ---------- Message + WhatsApp ---------- */
+
+    function buildMessage() {
+      const t = getTime().text;
+      // "Surprise Me" hands the spot decision over to the sender
+      const where = state.spot.text
+        ? `I picked ${state.spot.text} at ${t}`
+        : `I'm leaving the spot to you, surprise me! ${t} works for me`;
+      return `Hey! For Friday, ${where} (${state.flavor.team}) 🍦`;
+    }
+
+    $('send').addEventListener('click', () => {
+      // Sends straight to this number (country code, no +). Remove the number for a contact picker instead.
+      const WA_NUMBER = '2482603277';
+      const url = 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(buildMessage());
+      stopSuccess();
+      playSfx('send');
+      setTimeout(() => { window.location.href = url; }, 350); // brief pause so the send sound can play
+    });
+
+    /* ---------- Celebration ---------- */
+
+    // Rain of ice cream emojis on the completion screen
+    function celebrate() {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const bits = ['🍦', '🍨', '🍧', '🍓', '💛', '✨', '🍫', '🥭'];
+      for (let i = 0; i < 36; i++) {
+        const el = document.createElement('span');
+        el.className = 'confetti';
+        el.textContent = bits[Math.floor(Math.random() * bits.length)];
+        el.style.left = Math.random() * 100 + 'vw';
+        el.style.fontSize = 18 + Math.random() * 22 + 'px';
+        el.style.animationDuration = 2.6 + Math.random() * 2.4 + 's';
+        el.style.animationDelay = Math.random() * 1.2 + 's';
+        document.body.appendChild(el);
+        el.addEventListener('animationend', () => el.remove());
+      }
+      if (navigator.vibrate) navigator.vibrate(30); // tiny buzz on phones that support it
+    }
+
+    /* ---------- Sound effects ---------- */
+    // Files sit next to this html file: tap, next, back, start, success, send (.mp3)
+    // Sounds only play after a tap, so phone browsers won't block them.
+    const SFX_VOLUME = { tap: 0.45, next: 0.4, back: 0.3, start: 0.5, success: 0.65, send: 0.5 };
+    let soundOn = true;
+    try { soundOn = localStorage.getItem('fip-sound') !== 'off'; } catch (e) {}
+
+    const sfx = {};
+    Object.keys(SFX_VOLUME).forEach((name) => {
+      const a = new Audio(name + '.mp3');
+      a.preload = 'auto';
+      sfx[name] = a;
+    });
+    let successAudio = null;
+
+    function playSfx(name) {
+      if (!soundOn || !sfx[name]) return;
+      try {
+        const a = sfx[name].cloneNode(); // clone so rapid taps can overlap
+        a.volume = SFX_VOLUME[name];
+        if (name === 'success') successAudio = a;
+        a.play().catch(() => {}); // a missing file or blocked audio fails silently
+      } catch (e) {}
+    }
+
+    function stopSuccess() {
+      if (successAudio) { successAudio.pause(); successAudio.currentTime = 0; successAudio = null; }
+    }
+
+    function paintToggle() {
+      $('sound-toggle').textContent = soundOn ? '🔊' : '🔇';
+      $('sound-toggle').setAttribute('aria-pressed', soundOn);
+    }
+
+    $('sound-toggle').addEventListener('click', () => {
+      soundOn = !soundOn;
+      try { localStorage.setItem('fip-sound', soundOn ? 'on' : 'off'); } catch (e) {}
+      if (!soundOn) stopSuccess(); else playSfx('tap');
+      paintToggle();
+    });
+    paintToggle();
+
+    /* ---------- Init ---------- */
+    render('spots',   OPTIONS.spot,   cardHTML);
+    render('times',   OPTIONS.time,   pillHTML);
+    render('flavors', OPTIONS.flavor, cardHTML);
+    goTo(0);
+  </script>
+</body>
+</html>
