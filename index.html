@@ -274,6 +274,9 @@
         { id: 'dolce',    label: 'La Dolce Vita (Victoria)', tag: 'Classic gelato, right in town.',            icon: '🍨', text: 'La Dolce Vita' },
         { id: 'dockside', label: 'Dockside / Eden Plaza',    tag: 'Waterfront views & chill vibe.',            icon: '🌊', text: 'Dockside / Eden Plaza' },
         { id: 'newscafe', label: 'News Cafe (Trinity House)', tag: 'Modern, central, and very relaxed.',          icon: '☕', text: 'News Cafe (Trinity House)' },
+        { id: 'arcade',   label: 'Arcade at Paradis des Enfants', tag: 'Arcade games, ice cream & fun vibes right in Town.', icon: '🎮',
+          desc: 'For when you want to smash some arcade games and grab a treat after a long week.',
+          badge: '⭐ Recommended', text: 'Arcade at Paradis des Enfants' },
         { id: 'surprise', label: 'Surprise Me',              tag: "You choose the spot. I'll just show up and enjoy it.", icon: '🎲', text: null } // null = spot left to him
       ],
       time: [
@@ -338,8 +341,10 @@
           class="card relative flex w-full items-center gap-4 rounded-3xl p-4 text-left">
           <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-3xl" style="background: var(--cream-2)">${o.icon}</span>
           <span class="min-w-0 flex-1">
+            ${o.badge ? `<span class="mb-1 inline-block rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white" style="background: var(--berry)">${o.badge}</span>` : ''}
             <span class="block text-base font-bold">${o.label}</span>
             <span class="block text-sm" style="color: var(--ink-soft)">${o.tag}</span>
+            ${o.desc ? `<span class="mt-1 block text-xs leading-snug" style="color: var(--ink-soft); opacity:.85">${o.desc}</span>` : ''}
           </span>
           <span class="check flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black text-white" style="background: var(--accent)">✓</span>
         </button>`;
